@@ -22,15 +22,15 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
     @Bean
     public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2).select()
-                .apis(RequestHandlerSelectors.basePackage("org.example.mongo"))
+                .apis(RequestHandlerSelectors.basePackage("org.example.mongo.controllers"))
                 .paths(PathSelectors.any())
                 .build()
                 .apiInfo(info());
     }
 
     private ApiInfo info() {
-        return new ApiInfoBuilder().title("Get Your Quote Bot API")
-                .description("Quote provider API , which gives quote for you . Integrated framework with chat bot ")
+        return new ApiInfoBuilder().title("This is MongoDb APi")
+                .description("MongoDB + swagger UI integration with Spring boot Example")
                 .contact(new Contact("Ashwani Agarwal", "https://github.com/ashwaniagarwal226",
                         "ashwaniagarwal226@gmail.com"))
                 .version("1.0.0")
