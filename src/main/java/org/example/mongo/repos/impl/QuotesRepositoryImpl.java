@@ -15,6 +15,7 @@ import org.bson.types.ObjectId;
 import org.example.mongo.models.Quotes;
 import org.example.mongo.repos.QuotesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.ReturnDocument.AFTER;
 
+@Repository
 public class QuotesRepositoryImpl implements QuotesRepository {
 
     private static final TransactionOptions txnOptions = TransactionOptions.builder()
