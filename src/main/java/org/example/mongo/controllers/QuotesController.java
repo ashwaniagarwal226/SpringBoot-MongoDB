@@ -13,7 +13,6 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 @RestController
-@RequestMapping("/api")
 public class QuotesController {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(QuotesController.class);
