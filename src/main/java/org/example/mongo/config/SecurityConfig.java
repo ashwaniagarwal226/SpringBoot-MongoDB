@@ -1,5 +1,7 @@
 package org.example.mongo.config;
 
+import org.example.mongo.repos.UserSocialConnectionRepository;
+import org.example.mongo.repos.impl.MongoUsersConnectionRepository;
 import org.example.mongo.service.FacebookConnectionSignup;
 import org.example.mongo.service.FacebookSignInAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +14,22 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.encrypt.Encryptors;
+import org.springframework.social.connect.ConnectionFactory;
 import org.springframework.social.connect.ConnectionFactoryLocator;
 import org.springframework.social.connect.UsersConnectionRepository;
 import org.springframework.social.connect.mem.InMemoryUsersConnectionRepository;
 import org.springframework.social.connect.support.ConnectionFactoryRegistry;
+import org.springframework.social.connect.support.OAuth2ConnectionFactory;
 import org.springframework.social.connect.web.ProviderSignInController;
+import org.springframework.social.facebook.api.Facebook;
 import org.springframework.social.facebook.connect.FacebookConnectionFactory;
+import org.springframework.social.security.SocialAuthenticationServiceLocator;
+import org.springframework.social.security.SocialAuthenticationServiceRegistry;
+import org.springframework.social.security.provider.OAuth2AuthenticationService;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -34,6 +46,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     String appId;
 
     @Autowired
+    private UserSocialConnectionRepository userSocialConnectionRepository;
+
+    @Autowired
     private FacebookConnectionSignup facebookConnectionSignup;
 
     @Override
@@ -44,9 +59,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
-        // @formatter:off
         http
                 .csrf().disable()
+                .cors().disable()
                 .authorizeRequests()
                 .antMatchers("/login*","/signin/**","/signup/**").permitAll()
                 .anyRequest().authenticated()
@@ -54,13 +69,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin().loginPage("/login").permitAll()
                 .and()
                 .logout();
-    } // @formatter:on
+    }
 
     @Bean
     public ProviderSignInController providerSignInController() {
         ConnectionFactoryLocator connectionFactoryLocator = connectionFactoryLocator();
         UsersConnectionRepository usersConnectionRepository = getUsersConnectionRepository(connectionFactoryLocator);
-        ((InMemoryUsersConnectionRepository) usersConnectionRepository).setConnectionSignUp(facebookConnectionSignup);
+        ((MongoUsersConnectionRepository) usersConnectionRepository).setConnectionSignUp(facebookConnectionSignup);
         return new ProviderSignInController(connectionFactoryLocator, usersConnectionRepository, new FacebookSignInAdapter());
     }
 
@@ -72,7 +87,39 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private UsersConnectionRepository getUsersConnectionRepository(ConnectionFactoryLocator
                                                                            connectionFactoryLocator) {
-        return new InMemoryUsersConnectionRepository(connectionFactoryLocator);
+        MongoUsersConnectionRepository repository = new MongoUsersConnectionRepository(userSocialConnectionRepository,
+                socialAuthenticationServiceLocator(), Encryptors.noOpText());
+        repository.setConnectionSignUp(facebookConnectionSignup);
+        return repository;
+    }
+
+    @Bean
+    public SocialAuthenticationServiceLocator socialAuthenticationServiceLocator() {
+        SocialAuthenticationServiceRegistry registry = new SocialAuthenticationServiceRegistry();
+
+        List<ConnectionFactory<?>> connectionFactories = new ArrayList<>();
+        connectionFactories.add(new FacebookConnectionFactory(appId, appSecret));
+        registry.setConnectionFactories(connectionFactories);
+        /*OAuth2ConnectionFactory<Facebook> facebookConnectionFactory = new FacebookConnectionFactory(appId,appSecret);
+        OAuth2AuthenticationService<Facebook> facebookAuthenticationService = new OAuth2AuthenticationService<Facebook>(facebookConnectionFactory);
+        facebookAuthenticationService.setDefaultScope("");
+        registry.addAuthenticationService(facebookAuthenticationService);*/
+
+        //add google
+        /*OAuth2ConnectionFactory<Google> googleConnectionFactory = new GoogleConnectionFactory(environment.getProperty('google.clientId'),
+                environment.getProperty('google.clientSecret'));
+        OAuth2AuthenticationService<Google> googleAuthenticationService = new OAuth2AuthenticationService<Google>(googleConnectionFactory);
+        googleAuthenticationService.setScope('https://www.googleapis.com/auth/userinfo.profile');
+        registry.addAuthenticationService(googleAuthenticationService);
+
+        //add twitter
+        OAuth1ConnectionFactory<Twitter> twitterConnectionFactory = new TwitterConnectionFactory(environment.getProperty('twitter.consumerKey'),
+                environment.getProperty('twitter.consumerSecret'));
+        OAuth1AuthenticationService<Twitter> twitterAuthenticationService = new OAuth1AuthenticationService<Twitter>(twitterConnectionFactory);
+        registry.addAuthenticationService(twitterAuthenticationService);*/
+
+        //add facebook
+        return registry;
     }
 }
 
