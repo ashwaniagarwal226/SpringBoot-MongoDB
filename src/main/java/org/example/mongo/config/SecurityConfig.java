@@ -96,13 +96,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public SocialAuthenticationServiceLocator socialAuthenticationServiceLocator() {
         SocialAuthenticationServiceRegistry registry = new SocialAuthenticationServiceRegistry();
 
-        List<ConnectionFactory<?>> connectionFactories = new ArrayList<>();
-        connectionFactories.add(new FacebookConnectionFactory(appId, appSecret));
-        registry.setConnectionFactories(connectionFactories);
-        /*OAuth2ConnectionFactory<Facebook> facebookConnectionFactory = new FacebookConnectionFactory(appId,appSecret);
+        OAuth2ConnectionFactory<Facebook> facebookConnectionFactory = new FacebookConnectionFactory(appId,appSecret);
         OAuth2AuthenticationService<Facebook> facebookAuthenticationService = new OAuth2AuthenticationService<Facebook>(facebookConnectionFactory);
         facebookAuthenticationService.setDefaultScope("");
-        registry.addAuthenticationService(facebookAuthenticationService);*/
+        registry.addAuthenticationService(facebookAuthenticationService);
 
         //add google
         /*OAuth2ConnectionFactory<Google> googleConnectionFactory = new GoogleConnectionFactory(environment.getProperty('google.clientId'),
