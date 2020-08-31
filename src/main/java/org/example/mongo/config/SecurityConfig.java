@@ -97,12 +97,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public SocialAuthenticationServiceLocator socialAuthenticationServiceLocator() {
         SocialAuthenticationServiceRegistry registry = new SocialAuthenticationServiceRegistry();
 
-        OAuth2ConnectionFactory<Facebook> facebookConnectionFactory = new FacebookConnectionFactory(appId, appSecret);
-        OAuth2Parameters params = new OAuth2Parameters();
-        params.setRedirectUri("http://localhost:3000/home");
-        params.setScope("email,public_profile");
-        facebookConnectionFactory.getOAuthOperations().buildAuthenticateUrl(params);
-
+        OAuth2ConnectionFactory<Facebook> facebookConnectionFactory = new FacebookConnectionFactory(appId,appSecret);
         OAuth2AuthenticationService<Facebook> facebookAuthenticationService = new OAuth2AuthenticationService<Facebook>(facebookConnectionFactory);
         facebookAuthenticationService.setDefaultScope("");
         registry.addAuthenticationService(facebookAuthenticationService);
