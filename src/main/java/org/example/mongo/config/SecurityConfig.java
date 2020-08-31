@@ -15,21 +15,17 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.encrypt.Encryptors;
-import org.springframework.social.connect.ConnectionFactory;
 import org.springframework.social.connect.ConnectionFactoryLocator;
 import org.springframework.social.connect.UsersConnectionRepository;
-import org.springframework.social.connect.mem.InMemoryUsersConnectionRepository;
 import org.springframework.social.connect.support.ConnectionFactoryRegistry;
 import org.springframework.social.connect.support.OAuth2ConnectionFactory;
 import org.springframework.social.connect.web.ProviderSignInController;
 import org.springframework.social.facebook.api.Facebook;
 import org.springframework.social.facebook.connect.FacebookConnectionFactory;
+import org.springframework.social.oauth2.OAuth2Parameters;
 import org.springframework.social.security.SocialAuthenticationServiceLocator;
 import org.springframework.social.security.SocialAuthenticationServiceRegistry;
 import org.springframework.social.security.provider.OAuth2AuthenticationService;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -44,6 +40,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Value("${spring.social.facebook.appId}")
     String appId;
+
+    @Value("${app.post.signin.url}")
+    String postSignInUrl;
 
     @Autowired
     private UserSocialConnectionRepository userSocialConnectionRepository;
@@ -62,7 +61,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/login*","/signin/**","/signup/**").permitAll()
+                .antMatchers("/login*", "/signin/**", "/signup/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin().loginPage("/login").permitAll()
@@ -75,7 +74,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         ConnectionFactoryLocator connectionFactoryLocator = connectionFactoryLocator();
         UsersConnectionRepository usersConnectionRepository = getUsersConnectionRepository(connectionFactoryLocator);
         ((MongoUsersConnectionRepository) usersConnectionRepository).setConnectionSignUp(facebookConnectionSignup);
-        return new ProviderSignInController(connectionFactoryLocator, usersConnectionRepository, new FacebookSignInAdapter());
+        ProviderSignInController  providerSignInController = new ProviderSignInController(connectionFactoryLocator, usersConnectionRepository, new FacebookSignInAdapter());
+        providerSignInController.setPostSignInUrl(postSignInUrl);
+        return providerSignInController;
     }
 
     private ConnectionFactoryLocator connectionFactoryLocator() {
@@ -96,7 +97,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public SocialAuthenticationServiceLocator socialAuthenticationServiceLocator() {
         SocialAuthenticationServiceRegistry registry = new SocialAuthenticationServiceRegistry();
 
-        OAuth2ConnectionFactory<Facebook> facebookConnectionFactory = new FacebookConnectionFactory(appId,appSecret);
+        OAuth2ConnectionFactory<Facebook> facebookConnectionFactory = new FacebookConnectionFactory(appId, appSecret);
+        OAuth2Parameters params = new OAuth2Parameters();
+        params.setRedirectUri("http://localhost:3000/home");
+        params.setScope("email,public_profile");
+        facebookConnectionFactory.getOAuthOperations().buildAuthenticateUrl(params);
+
         OAuth2AuthenticationService<Facebook> facebookAuthenticationService = new OAuth2AuthenticationService<Facebook>(facebookConnectionFactory);
         facebookAuthenticationService.setDefaultScope("");
         registry.addAuthenticationService(facebookAuthenticationService);
